@@ -18,7 +18,7 @@ public class CodeVisitor : CODEBaseVisitor<object?>
         return base.VisitProgram(context);
     }
 
-    public override object? VisitDeclarations ([NotNull] CODEParser.DeclarationsContext context)
+    public override object? VisitDeclarations ([NotNull] DeclarationsContext context)
     {
         var type = Visit(context.type());
         var typestr = context.type().GetText();
@@ -58,7 +58,7 @@ public class CodeVisitor : CODEBaseVisitor<object?>
         return null;
     }
 
-    public override object? VisitAssignment([NotNull] CODEParser.AssignmentContext context)
+    public override object? VisitAssignment([NotNull] AssignmentContext context)
     {
         foreach (var i in context.IDENTIFIER())
         {
@@ -79,24 +79,24 @@ public class CodeVisitor : CODEBaseVisitor<object?>
         return CodeConstant.VariableDeclarations(SymbolTable, varName, context)!;
     }
 
-    public override object? VisitConstant([NotNull] CODEParser.ConstantContext context)
+    public override object? VisitConstant([NotNull] ConstantContext context)
     {
         var constant = context.GetText();
         return CodeConstant.Data(constant, context);
     }
 
-    public override object? VisitBuiltin_display([NotNull] CODEParser.Builtin_displayContext context)
+    public override object? VisitBuiltin_display([NotNull] Builtin_displayContext context)
     {
         var exp = Visit(context.expression());
         return CodeConstant.BuiltinDisplay(exp);
     }
 
-    public override object? VisitType([NotNull] CODEParser.TypeContext context)
+    public override object? VisitType([NotNull] TypeContext context)
     {
         return CodeConstant.Type(context);
     }
 
-    public override object? VisitConcatExpression ([NotNull] CODEParser.ConcatExpressionContext context)
+    public override object? VisitConcatExpression ([NotNull] ConcatExpressionContext context)
     {
         var left = Visit(context.expression(0));
         var right = Visit(context.expression(1));
@@ -104,18 +104,18 @@ public class CodeVisitor : CODEBaseVisitor<object?>
         return CodeConstant.Append(left, right);
     }
 
-    public override object? VisitIdentifierExpression([NotNull] CODEParser.IdentifierExpressionContext context)
+    public override object? VisitIdentifierExpression([NotNull] IdentifierExpressionContext context)
     {
         var identifier = context.IDENTIFIER().GetText();
         return CodeConstant.Identifier(SymbolTable, identifier, context);
     }
 
-    public override object? VisitConstantExpression([NotNull] CODEParser.ConstantExpressionContext context)
+    public override object? VisitConstantExpression([NotNull] ConstantExpressionContext context)
     {
         return CodeConstant.ConstantExpressionParser(context);
     }
 
-    public override object? VisitVariable_assignment([NotNull] CODEParser.Variable_assignmentContext context)
+    public override object? VisitVariable_assignment([NotNull] Variable_assignmentContext context)
     {
         var name = context.IDENTIFIER().GetText();
 
@@ -123,12 +123,12 @@ public class CodeVisitor : CODEBaseVisitor<object?>
         return SymbolTable[name] = null;
     }
 
-    public override object? VisitUnaryExpression([NotNull] CODEParser.UnaryExpressionContext context)
+    public override object? VisitUnaryExpression([NotNull] UnaryExpressionContext context)
     {
         return Evaluator.Unary(context, context.unary_operator().GetText(), Visit(context.expression()));
     }
 
-    public override object? VisitTermExpression([NotNull] CODEParser.TermExpressionContext context)
+    public override object? VisitTermExpression([NotNull] TermExpressionContext context)
     {
         var left = Visit(context.expression(0));
         var right = Visit(context.expression(1));
@@ -144,7 +144,7 @@ public class CodeVisitor : CODEBaseVisitor<object?>
     }
 
 
-    public override object? VisitFactorExpression([NotNull] CODEParser.FactorExpressionContext context)
+    public override object? VisitFactorExpression([NotNull] FactorExpressionContext context)
     {
         var left = Visit(context.expression(0));
         var right = Visit(context.expression(1));
@@ -160,7 +160,7 @@ public class CodeVisitor : CODEBaseVisitor<object?>
         };
     }
 
-    public override object? VisitRelationalExpression([NotNull] CODEParser.RelationalExpressionContext context)
+    public override object? VisitRelationalExpression([NotNull] RelationalExpressionContext context)
     {
         var left = Visit(context.expression(0));
         var right = Visit(context.expression(1));
@@ -170,19 +170,19 @@ public class CodeVisitor : CODEBaseVisitor<object?>
         return Evaluator.Relational(context, left, right, ops);
     }
 
-    public override object? VisitParenExpression([NotNull] CODEParser.ParenExpressionContext context)
+    public override object? VisitParenExpression([NotNull] ParenExpressionContext context)
     {
         return Visit(context.expression());
     }
 
-    public override object? VisitNotExpression([NotNull] CODEParser.NotExpressionContext context)
+    public override object? VisitNotExpression([NotNull] NotExpressionContext context)
     {
         var expressionValue = Visit(context.expression());
 
         return Evaluator.Negation(context, expressionValue);
     }
 
-    public override object? VisitBooleanExpression([NotNull] CODEParser.BooleanExpressionContext context)
+    public override object? VisitBooleanExpression([NotNull] BooleanExpressionContext context)
     {
         var left = Visit(context.expression(0));
         var right = Visit(context.expression(1));
@@ -191,7 +191,7 @@ public class CodeVisitor : CODEBaseVisitor<object?>
         return Evaluator.BoolOperation(context, left, right, boolop);
     }
 
-    public override object? VisitIf_else_statement([NotNull] CODEParser.If_else_statementContext context)
+    public override object? VisitIf_else_statement([NotNull] If_else_statementContext context)
     {
         var condition = Visit(context.expression());
 
@@ -235,7 +235,7 @@ public class CodeVisitor : CODEBaseVisitor<object?>
         return null;
     }
 
-    public override object? VisitWhile_statement([NotNull] CODEParser.While_statementContext context)
+    public override object? VisitWhile_statement([NotNull] While_statementContext context)
     {
         var condition = Visit(context.expression());
         var maxIterations = 1000;
@@ -261,7 +261,7 @@ public class CodeVisitor : CODEBaseVisitor<object?>
         return null;
     }
 
-    public override object? VisitDo_while_statement([NotNull] CODEParser.Do_while_statementContext context)
+    public override object? VisitDo_while_statement([NotNull] Do_while_statementContext context)
     {
         var condition = Visit(context.expression());
         var maxIterations = 1000;
@@ -287,18 +287,18 @@ public class CodeVisitor : CODEBaseVisitor<object?>
         return null;
     }
 
-    public override object? VisitEscapeSequenceExpression([NotNull] CODEParser.EscapeSequenceExpressionContext context)
+    public override object? VisitEscapeSequenceExpression([NotNull] EscapeSequenceExpressionContext context)
     {
         var sequence = context.GetText()[1];
         return Evaluator.Escape(context, sequence) ?? ErrorHandler.HandleInvalidEscapeSequenceError(context, sequence);
     }
 
-    public override object? VisitNewlineExpression ([NotNull] CODEParser.NewlineExpressionContext context)
+    public override object? VisitNewlineExpression ([NotNull] NewlineExpressionContext context)
     {
         return "\n";
     }
 
-    public override object? VisitBuiltin_scan([NotNull] CODEParser.Builtin_scanContext context)
+    public override object? VisitBuiltin_scan([NotNull] Builtin_scanContext context)
     {
         var input = Console.ReadLine();
         var inputs = input!.Split(',').Select(s => s.Trim()).ToArray();
@@ -306,7 +306,6 @@ public class CodeVisitor : CODEBaseVisitor<object?>
         if (inputs.Length < 1 || inputs.Length > context.IDENTIFIER().Length)
         {
             return ErrorHandler.HandleInvalidScanInputsError(context, context.IDENTIFIER().Length, inputs.Length);
-            //throw new ArgumentException($"Invalid number of inputs. Expected between 1 and {context.IDENTIFIER().Length}, but got {inputs.Length}.");
         }
 
         for (int i = 0; i < inputs.Length; i++)
@@ -315,13 +314,10 @@ public class CodeVisitor : CODEBaseVisitor<object?>
             if (!SymbolTable.ContainsKey(idName))
             {
                 return ErrorHandler.HandleUndeclaredVariableError(context, Types, idName);
-                //throw new ArgumentException($"Variable '{idName}' is not declared.");
             }
             CodeConstant.Scan(context, Types, SymbolTable, idName, inputs[i]);
         }
 
         return null;
     }
-
-    
 }
