@@ -21,38 +21,38 @@ public class CodeVisitor : CODEBaseVisitor<object?>
     public override object? VisitDeclarations ([NotNull] DeclarationsContext context)
     {
         var type = Visit(context.type());
-        var typestr = context.type().GetText();
-        var varnames = context.IDENTIFIER();
+        var typeName = context.type().GetText();
+        var variables = context.IDENTIFIER();
         
-        var contextstring = context.GetText().Replace(typestr, "");
+        var contextLex = context.GetText().Replace(typeName, "");
 
-        var contextParts = contextstring.Split(',');
+        var varTokens = contextLex.Split(',');
         var exp = context.expression();
         int expctr = 0;
 
-        for (int x = 0; x < contextParts.Length; x++)
+        for (int x = 0; x < varTokens.Length; x++)
         {
-            if (SymbolTable.ContainsKey(varnames[x].GetText()))
+            if (SymbolTable.ContainsKey(variables[x].GetText()))
             {
-                Console.WriteLine($"Error: Redefinition of variable {varnames[x].GetText()}");
+                Console.WriteLine($"Error: Redefinition of variable {variables[x].GetText()}");
                 continue;
             }
-            if (contextParts[x].Contains('='))
+            if (varTokens[x].Contains('='))
             {
                 if (expctr < exp.Count())
                 {
                     if (ErrorHandler.HandleTypeError(context, Visit(exp[expctr]), (Type?)type))
                     {
-                        SymbolTable[varnames[x].GetText()] = Visit(exp[expctr]);
-                        Types[varnames[x].GetText()] = type;
+                        SymbolTable[variables[x].GetText()] = Visit(exp[expctr]);
+                        Types[variables[x].GetText()] = type;
                     }
                     expctr++;
                 }
             }
             else
             {
-                SymbolTable[varnames[x].GetText()] = null;
-                Types[varnames[x].GetText()] = type;
+                SymbolTable[variables[x].GetText()] = null;
+                Types[variables[x].GetText()] = type;
             }
         }
         return null;
@@ -133,9 +133,9 @@ public class CodeVisitor : CODEBaseVisitor<object?>
         var left = Visit(context.expression(0));
         var right = Visit(context.expression(1));
 
-        var ops = context.term_operator().GetText();
+        var termOperation = context.term_operator().GetText();
 
-        return ops switch
+        return termOperation switch
         {
             "+" => Evaluator.Add(context, left, right),
             "-" => Evaluator.Subtract(context, left, right),
@@ -149,9 +149,9 @@ public class CodeVisitor : CODEBaseVisitor<object?>
         var left = Visit(context.expression(0));
         var right = Visit(context.expression(1));
 
-        var ops = context.factor_operator().GetText();
+        var factorOperation = context.factor_operator().GetText();
 
-        return ops switch
+        return factorOperation switch
         {
             "*" => Evaluator.Multiply(context, left, right),
             "/" => Evaluator.Divide(context, left, right),
@@ -165,9 +165,9 @@ public class CodeVisitor : CODEBaseVisitor<object?>
         var left = Visit(context.expression(0));
         var right = Visit(context.expression(1));
 
-        var ops = context.relational_operator().GetText();
+        var relationalOperation = context.relational_operator().GetText();
 
-        return Evaluator.Relational(context, left, right, ops);
+        return Evaluator.Relational(context, left, right, relationalOperation);
     }
 
     public override object? VisitParenExpression([NotNull] ParenExpressionContext context)
@@ -186,37 +186,38 @@ public class CodeVisitor : CODEBaseVisitor<object?>
     {
         var left = Visit(context.expression(0));
         var right = Visit(context.expression(1));
-        var boolop = context.boolean_operator().GetText();
+        
+        var boolOperation = context.boolean_operator().GetText();
 
-        return Evaluator.BoolOperation(context, left, right, boolop);
+        return Evaluator.BoolOperation(context, left, right, boolOperation);
     }
 
     public override object? VisitIf_else_statement([NotNull] If_else_statementContext context)
     {
         var condition = Visit(context.expression());
-
         var result = ErrorHandler.HandleLogicError(context, condition);
         result = Convert.ToBoolean(result);
+        
         if (ErrorHandler.HandleLogicError(context, condition) == true)
         {
-            var lines = context.executables().ToList();
-            foreach (var line in lines)
+            var executables = context.executables().ToList();
+            foreach (var executable in executables)
             {
-                Visit(line);
+                Visit(executable);
             }
         }
         else
         {
-            var elseIfBlocks = context.else_if_statement();
-            foreach (var elseIfBlock in elseIfBlocks)
+            var elseIfStatements = context.else_if_statement();
+            foreach (var elseIfStatement in elseIfStatements)
             {
-                var elseIfCondition = Visit(elseIfBlock.expression());
+                var elseIfCondition = Visit(elseIfStatement.expression());
                 if (ErrorHandler.HandleLogicError(context, elseIfCondition) == true)
                 {
-                    var elseIfLines = elseIfBlock.executables().ToList();
-                    foreach (var line in elseIfLines)
+                    var elseIfExecutables = elseIfStatement.executables().ToList();
+                    foreach (var executable in elseIfExecutables)
                     {
-                        Visit(line);
+                        Visit(executable);
                     }
                     return null;
                 }
@@ -225,10 +226,10 @@ public class CodeVisitor : CODEBaseVisitor<object?>
             var elseStatement = context.else_statement();
             if (elseStatement != null)
             {
-                var elseLines = elseStatement.executables().ToList();
-                foreach (var line in elseLines)
+                var elseExecutables = elseStatement.executables().ToList();
+                foreach (var elseExecutable in elseExecutables)
                 {
-                    Visit(line);
+                    Visit(elseExecutable);
                 }
             }
         }
@@ -237,24 +238,23 @@ public class CodeVisitor : CODEBaseVisitor<object?>
 
     public override object? VisitWhile_statement([NotNull] While_statementContext context)
     {
-        var condition = Visit(context.expression());
-        var maxIterations = 1000;
+        var boolExpression = Visit(context.expression());
         var iterations = 0;
 
-        while (ErrorHandler.HandleLogicError(context, condition) == true)
+        while (ErrorHandler.HandleLogicError(context, boolExpression) == true)
         {
-            if (iterations >= maxIterations)
+            if (iterations >= CodeConstant.MAX_LOOP_ITERATIONS)
             {
                 return ErrorHandler.HandleInfiniteLoopError(context);
             }
             else
             {
-                var lines = context.executables().ToList();
-                foreach (var line in lines)
+                var executables = context.executables().ToList();
+                foreach (var executable in executables)
                 {
-                    Visit(line);
+                    Visit(executable);
                 }
-                condition = Visit(context.expression());
+                boolExpression = Visit(context.expression());
                 iterations++;
             }
         }
@@ -263,34 +263,33 @@ public class CodeVisitor : CODEBaseVisitor<object?>
 
     public override object? VisitDo_while_statement([NotNull] Do_while_statementContext context)
     {
-        var condition = Visit(context.expression());
-        var maxIterations = 1000;
+        var boolExpression = Visit(context.expression());
         var iterations = 0;
 
         do
         {
-            var lines = context.executables().ToList();
-            foreach (var line in lines)
+            var executables = context.executables().ToList();
+            foreach (var executable in executables)
             {
-                Visit(line);
+                Visit(executable);
             }
-            condition = Visit(context.expression());
+            boolExpression = Visit(context.expression());
             iterations++;
 
-            if (iterations >= maxIterations)
+            if (iterations >= CodeConstant.MAX_LOOP_ITERATIONS)
             {
                 return ErrorHandler.HandleInfiniteLoopError(context);
             }
 
-        } while (ErrorHandler.HandleLogicError(context, condition) == true);
+        } while (ErrorHandler.HandleLogicError(context, boolExpression) == true);
 
         return null;
     }
 
     public override object? VisitEscapeSequenceExpression([NotNull] EscapeSequenceExpressionContext context)
     {
-        var sequence = context.GetText()[1];
-        return Evaluator.Escape(context, sequence) ?? ErrorHandler.HandleInvalidEscapeSequenceError(context, sequence);
+        var escSequence = context.GetText()[1];
+        return Evaluator.Escape(context, escSequence) ?? ErrorHandler.HandleInvalidEscapeSequenceError(context, escSequence);
     }
 
     public override object? VisitNewlineExpression ([NotNull] NewlineExpressionContext context)

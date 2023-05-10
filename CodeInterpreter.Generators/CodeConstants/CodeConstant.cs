@@ -9,6 +9,7 @@ namespace CodeInterpreter.Generators.CodeConstants;
 
 public class CodeConstant
 {
+    public static int MAX_LOOP_ITERATIONS = 1000;
     public static object? VariableDeclarations(Dictionary<string, object?> variables, string varName, CODEParser.Variable_declarationContext context)
     {
         if (variables != null && variables.TryGetValue(varName, out object? value))
